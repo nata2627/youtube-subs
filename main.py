@@ -2,6 +2,8 @@ import argparse
 import sys
 import re
 
+from downloader import fetch_subtitles, get_available_langs
+
 
 def is_valid_youtube_url(url: str) -> bool:
     patterns = [
@@ -66,11 +68,34 @@ def main():
         print(f"error: '{args.url}' does not look like a valid YouTube URL", file=sys.stderr)
         sys.exit(1)
 
-    print(f"URL:        {args.url}")
-    print(f"Language:   {args.lang}")
-    print(f"Output:     {args.output or 'stdout'}")
-    print(f"List langs: {args.list_langs}")
-    print(f"Clean text: {not args.no_clean}")
+    if args.list_langs:
+        langs = get_available_langs(args.url)
+        if langs["manual"]:
+            print("Manual subtitles:    " + ", ".join(langs["manual"]))
+        else:
+            print("Manual subtitles:    (none)")
+        if langs["automatic"]:
+            print("Auto-generated:      " + ", ".join(langs["automatic"]))
+        else:
+            print("Auto-generated:      (none)")
+        sys.exit(0)
+
+    langs = get_available_langs(args.url)
+    all_langs = set(langs["manual"]) | set(langs["automatic"])
+
+    if args.lang not in all_langs:
+        print(f"error: subtitles for language '{args.lang}' are not available", file=sys.stderr)
+        if all_langs:
+            manual_str = ", ".join(langs["manual"]) if langs["manual"] else "(none)"
+            auto_str = ", ".join(langs["automatic"]) if langs["automatic"] else "(none)"
+            print(f"  Manual subtitles:  {manual_str}", file=sys.stderr)
+            print(f"  Auto-generated:    {auto_str}", file=sys.stderr)
+        else:
+            print("  No subtitles are available for this video.", file=sys.stderr)
+        sys.exit(1)
+
+    raw_text, fmt = fetch_subtitles(args.url, args.lang)
+    print(raw_text)
 
 
 if __name__ == "__main__":

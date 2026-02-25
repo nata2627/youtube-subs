@@ -3,6 +3,29 @@ import urllib.request
 import yt_dlp
 
 
+def get_available_langs(url: str) -> dict[str, list[str]]:
+    """
+    Return available subtitle languages for the given video URL.
+
+    Returns a dict with two keys:
+      "manual"    — list of language codes for manually uploaded subtitles
+      "automatic" — list of language codes for auto-generated captions
+    """
+    ydl_opts = {
+        "skip_download": True,
+        "quiet": True,
+        "no_warnings": True,
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+
+    manual = sorted(info.get("subtitles", {}).keys())
+    automatic = sorted(info.get("automatic_captions", {}).keys())
+
+    return {"manual": manual, "automatic": automatic}
+
+
 def fetch_subtitles(url: str, lang: str) -> tuple[str, str]:
     """
     Download subtitles for a YouTube video into memory without writing to disk.
