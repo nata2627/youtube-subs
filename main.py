@@ -1,6 +1,7 @@
-import argparse
 import sys
 import re
+
+import click
 
 from downloader import fetch_subtitles, get_available_langs
 
@@ -14,88 +15,54 @@ def is_valid_youtube_url(url: str) -> bool:
     return any(re.match(p, url) for p in patterns)
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="main.py",
-        description="Download and format subtitles from a YouTube video.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-examples:
-  python main.py https://www.youtube.com/watch?v=dQw4w9WgXcQ
-  python main.py https://youtu.be/dQw4w9WgXcQ --lang ru
-  python main.py https://youtu.be/dQw4w9WgXcQ --output subtitles.txt
-  python main.py https://youtu.be/dQw4w9WgXcQ --list-langs
-        """,
-    )
+@click.command()
+@click.argument("url")
+@click.option("--lang", default="en", metavar="LANG", help="Subtitle language code (default: en)")
+@click.option("--output", "-o", default=None, metavar="FILE", help="Save output to a file instead of printing to stdout")
+@click.option("--list-langs", is_flag=True, help="List available subtitle languages and exit")
+@click.option("--no-clean", is_flag=True, help="Skip text normalization and return raw subtitle text")
+def main(url, lang, output, list_langs, no_clean):
+    """Download and format subtitles from a YouTube video.
 
-    parser.add_argument(
-        "url",
-        metavar="URL",
-        help="YouTube video URL",
-    )
-    parser.add_argument(
-        "--lang",
-        metavar="LANG",
-        default="en",
-        help="subtitle language code (default: en)",
-    )
-    parser.add_argument(
-        "--output",
-        "-o",
-        metavar="FILE",
-        default=None,
-        help="save output to a file instead of printing to stdout",
-    )
-    parser.add_argument(
-        "--list-langs",
-        action="store_true",
-        help="list available subtitle languages and exit",
-    )
-    parser.add_argument(
-        "--no-clean",
-        action="store_true",
-        help="skip text normalization and return raw subtitle text",
-    )
-
-    return parser
-
-
-def main():
-    parser = build_parser()
-    args = parser.parse_args()
-
-    if not is_valid_youtube_url(args.url):
-        print(f"error: '{args.url}' does not look like a valid YouTube URL", file=sys.stderr)
+    \b
+    Examples:
+      python main.py https://www.youtube.com/watch?v=dQw4w9WgXcQ
+      python main.py https://youtu.be/dQw4w9WgXcQ --lang ru
+      python main.py https://youtu.be/dQw4w9WgXcQ --output subtitles.txt
+      python main.py https://youtu.be/dQw4w9WgXcQ --list-langs
+    """
+    if not is_valid_youtube_url(url):
+        click.echo(f"error: '{url}' does not look like a valid YouTube URL", err=True)
         sys.exit(1)
 
-    if args.list_langs:
-        langs = get_available_langs(args.url)
+    if list_langs:
+        langs = get_available_langs(url)
         if langs["manual"]:
-            print("Manual subtitles:    " + ", ".join(langs["manual"]))
+            click.echo("Manual subtitles:    " + ", ".join(langs["manual"]))
         else:
-            print("Manual subtitles:    (none)")
+            click.echo("Manual subtitles:    (none)")
         if langs["automatic"]:
-            print("Auto-generated:      " + ", ".join(langs["automatic"]))
+            click.echo("Auto-generated:      " + ", ".join(langs["automatic"]))
         else:
-            print("Auto-generated:      (none)")
+            click.echo("Auto-generated:      (none)")
         sys.exit(0)
 
-    langs = get_available_langs(args.url)
+    langs = get_available_langs(url)
     all_langs = set(langs["manual"]) | set(langs["automatic"])
 
-    if args.lang not in all_langs:
-        print(f"error: subtitles for language '{args.lang}' are not available", file=sys.stderr)
+    if lang not in all_langs:
+        click.echo(f"error: subtitles for language '{lang}' are not available", err=True)
         if all_langs:
             manual_str = ", ".join(langs["manual"]) if langs["manual"] else "(none)"
             auto_str = ", ".join(langs["automatic"]) if langs["automatic"] else "(none)"
-            print(f"  Manual subtitles:  {manual_str}", file=sys.stderr)
-            print(f"  Auto-generated:    {auto_str}", file=sys.stderr)
+            click.echo(f"  Manual subtitles:  {manual_str}", err=True)
+            click.echo(f"  Auto-generated:    {auto_str}", err=True)
         else:
-            print("  No subtitles are available for this video.", file=sys.stderr)
+            click.echo("  No subtitles are available for this video.", err=True)
         sys.exit(1)
 
-    raw_text, fmt = fetch_subtitles(args.url, args.lang)
-    print(raw_text)
+    raw_text, fmt = fetch_subtitles(url, lang)
+    click.echo(raw_text)
 
 
 if __name__ == "__main__":
