@@ -71,3 +71,52 @@ def parse_vtt(text: str) -> list[str]:
         i += 1
 
     return result
+
+
+def parse_srt(text: str) -> list[str]:
+    """
+    Parse an SRT subtitle file and return a list of text lines.
+
+    Strips numeric cue indices, timing lines (HH:MM:SS,mmm --> HH:MM:SS,mmm),
+    and blank separators. Returns only the actual subtitle text lines.
+    """
+    lines = text.splitlines()
+    result = []
+
+    timing_re = re.compile(
+        r"^\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}"
+    )
+    index_re = re.compile(r"^\d+$")
+
+    for line in lines:
+        stripped = line.strip()
+
+        if not stripped:
+            continue
+
+        if index_re.match(stripped):
+            continue
+
+        if timing_re.match(stripped):
+            continue
+
+        clean = re.sub(r"<[^>]+>", "", stripped)
+        clean = clean.strip()
+        if clean:
+            result.append(clean)
+
+    return result
+
+
+def parse(text: str, fmt: str) -> list[str]:
+    """
+    Dispatch to the appropriate parser based on subtitle format.
+
+    Supported formats: 'vtt', 'srt'. Unknown formats are passed through
+    as a single-element list containing the raw text.
+    """
+    if fmt == "vtt":
+        return parse_vtt(text)
+    if fmt == "srt":
+        return parse_srt(text)
+    return [line.strip() for line in text.splitlines() if line.strip()]
