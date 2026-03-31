@@ -4,6 +4,9 @@ import re
 import click
 
 from downloader import fetch_subtitles, get_available_langs
+from parser import parse
+from cleaner import clean
+from output import write_output
 
 
 def is_valid_youtube_url(url: str) -> bool:
@@ -62,7 +65,14 @@ def main(url, lang, output, list_langs, no_clean):
         sys.exit(1)
 
     raw_text, fmt = fetch_subtitles(url, lang)
-    click.echo(raw_text)
+    lines = parse(raw_text, fmt)
+    if not no_clean:
+        lines = clean(lines)
+
+    if output:
+        write_output(lines, output)
+    else:
+        click.echo("\n".join(lines))
 
 
 if __name__ == "__main__":
