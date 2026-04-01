@@ -81,6 +81,25 @@ def parse_srt(text: str) -> list[str]:
     return result
 
 
+def detect_format(text: str) -> str:
+    first_line = text.lstrip().split("\n")[0].strip()
+    if first_line.startswith("WEBVTT"):
+        return "vtt"
+
+    srt_timing_re = re.compile(
+        r"^\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}"
+    )
+    index_re = re.compile(r"^\d+$")
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if index_re.match(stripped) and i + 1 < len(lines):
+            if srt_timing_re.match(lines[i + 1].strip()):
+                return "srt"
+
+    return "unknown"
+
+
 def parse(text: str, fmt: str) -> list[str]:
     """
     Dispatch to the appropriate parser based on subtitle format.

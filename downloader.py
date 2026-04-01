@@ -2,6 +2,8 @@ import urllib.request
 
 import yt_dlp
 
+from parser import detect_format
+
 
 def get_available_langs(url: str) -> dict[str, list[str]]:
     """
@@ -73,5 +75,8 @@ def fetch_subtitles(url: str, lang: str) -> tuple[str, str]:
     sub_url = chosen["url"]
     with urllib.request.urlopen(sub_url) as response:
         raw_text = response.read().decode("utf-8")
+
+    if chosen_fmt == "unknown":
+        chosen_fmt = detect_format(raw_text)
 
     return raw_text, chosen_fmt
