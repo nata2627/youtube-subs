@@ -5,6 +5,19 @@ import yt_dlp
 from parser import detect_format
 
 
+class _SilentLogger:
+    """Suppress all yt-dlp console output."""
+
+    def debug(self, msg):
+        pass
+
+    def warning(self, msg):
+        pass
+
+    def error(self, msg):
+        pass
+
+
 def get_available_langs(url: str) -> dict[str, list[str]]:
     """
     Return available subtitle languages for the given video URL.
@@ -15,8 +28,7 @@ def get_available_langs(url: str) -> dict[str, list[str]]:
     """
     ydl_opts = {
         "skip_download": True,
-        "quiet": True,
-        "no_warnings": True,
+        "logger": _SilentLogger(),
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -38,8 +50,7 @@ def fetch_subtitles(url: str, lang: str) -> tuple[str, str]:
     """
     ydl_opts = {
         "skip_download": True,
-        "quiet": True,
-        "no_warnings": True,
+        "logger": _SilentLogger(),
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:

@@ -39,7 +39,9 @@ def main(url, lang, output, list_langs, no_clean):
         sys.exit(1)
 
     if list_langs:
+        click.echo("[*] Fetching video metadata...", err=True)
         langs = get_available_langs(url)
+        click.echo("[ok] Done", err=True)
         if langs["manual"]:
             click.echo("Manual subtitles:    " + ", ".join(langs["manual"]))
         else:
@@ -50,6 +52,7 @@ def main(url, lang, output, list_langs, no_clean):
             click.echo("Auto-generated:      (none)")
         sys.exit(0)
 
+    click.echo("[*] Fetching video metadata...", err=True)
     langs = get_available_langs(url)
     all_langs = set(langs["manual"]) | set(langs["automatic"])
 
@@ -64,7 +67,9 @@ def main(url, lang, output, list_langs, no_clean):
             click.echo("  No subtitles are available for this video.", err=True)
         sys.exit(1)
 
+    click.echo(f"[*] Downloading subtitles ({lang})...", err=True)
     raw_text, fmt = fetch_subtitles(url, lang)
+    click.echo("[ok] Done", err=True)
     lines = parse(raw_text, fmt)
     if not no_clean:
         lines = clean(lines)
