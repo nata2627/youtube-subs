@@ -1,8 +1,18 @@
+import re
 import urllib.request
 
 import yt_dlp
 
 from parser import detect_format
+
+
+def is_valid_youtube_url(url: str) -> bool:
+    patterns = [
+        r"^https?://(www\.)?youtube\.com/watch\?v=[\w-]+",
+        r"^https?://youtu\.be/[\w-]+",
+        r"^https?://(www\.)?youtube\.com/shorts/[\w-]+",
+    ]
+    return any(re.match(p, url) for p in patterns)
 
 
 class _SilentLogger:
